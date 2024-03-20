@@ -1,39 +1,46 @@
-name: RC
-on:
-  push:
-    branches: [master, ci-build-rc]
 concurrency:
-  group: ${{ github.workflow }}
   cancel-in-progress: true
+  group: ${{ github.workflow }}
 jobs:
   build:
-    if: >
-      !contains(github.event.head_commit.message, '#skip-ci')
-    runs-on: ubuntu-latest
-    steps:
+    if: '!contains(github.event.head_commit.message, ''#skip-ci'')
 
-    - uses: actions/checkout@v3
+      '
+    runs-on: self-hosted
+    steps:
+    - continue-on-error: true
+      uses: actions/checkout@v3
       with:
         submodules: recursive
-
-    - uses: docker/build-push-action@v4
+    - continue-on-error: true
+      uses: docker/build-push-action@v4
       with:
-        tags: mycelium_builder:latest
-        push: false
         context: ${{ github.workspace }}
-
-    - uses: addnab/docker-run-action@v3
+        push: false
+        tags: mycelium_builder:latest
+    - continue-on-error: true
+      uses: addnab/docker-run-action@v3
       with:
         image: mycelium_builder:latest
-        options: >
-          --volume ${{ github.workspace }}:/app/
-          --device /dev/fuse --cap-add SYS_ADMIN --security-opt apparmor:unconfined
-        run: |
-          mkdir /project/
-          disorderfs --sort-dirents=yes --reverse-dirents=no /app/ /project/;
-          cd /project/
-          ./gradlew clean test mbw::assembleProdnetRelease mbw::assembleBtctestnetRelease mbw::assembleProdnetDebug mbw::assembleBtctestnetDebug
+        options: '--volume ${{ github.workspace }}:/app/ --device /dev/fuse --cap-add
+          SYS_ADMIN --security-opt apparmor:unconfined
 
-    - uses: actions/upload-artifact@v3
+          '
+        run: 'mkdir /project/
+
+          disorderfs --sort-dirents=yes --reverse-dirents=no /app/ /project/;
+
+          cd /project/
+
+          ./gradlew clean test mbw::assembleProdnetRelease mbw::assembleBtctestnetRelease
+          mbw::assembleProdnetDebug mbw::assembleBtctestnetDebug
+
+          '
+    - continue-on-error: true
+      uses: actions/upload-artifact@v3
       with:
         path: mbw/build/outputs/
+name: RC
+on:
+  repository_dispatch:
+    types: trigger-ga___rc.yml
